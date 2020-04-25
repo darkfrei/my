@@ -85,7 +85,7 @@ function generate_layer (nodes_amount)
 	}
 	for n_node = 1, nodes_amount do
 		local node = generate_node ()
-		table.insert (layer.nodesm node)
+		table.insert (layer.nodes, node)
 	end
 	return layer
 end
@@ -94,7 +94,8 @@ local neu = {}
 
 neu.feedForward = function (nn) -- neural network
 	local input_nodes = nn.input_nodes
-	local input_size = #input_layer.nodes
+--	local input_size = #input_layer.nodes
+	local input_size = #input_nodes
 	local input_layer = {size=input_size, nodes = {}}
 	for i, input_value in pairs (input_nodes) do
 		table.insert (input_layer.nodes, {result = input_value})
@@ -104,7 +105,7 @@ neu.feedForward = function (nn) -- neural network
 	table.insert(layers, input_layer)
 	
 	local length = nn.length or 4
-	local middle_layers = nn.middle_layers[n]
+	local middle_layers = nn.middle_layers or {}
 	if not middle_layers then 
 		middle_layers = {}
 		nn.middle_layers = middle_layers
@@ -123,7 +124,7 @@ neu.feedForward = function (nn) -- neural network
 	local output_layer = nn.output_layer
 	if not output_layer then
 		output_layer = generate_layer (output_size)
-		nn.output_layer
+		nn.output_layer = output_layer
 		nn.output_size = output_size
 	end
 	table.insert(layers, output_layer)
@@ -140,7 +141,7 @@ neu.feedForward = function (nn) -- neural network
 				node = generate_node ()
 				layer.nodes[n_node] = node
 			end
-			local bias = node.bias + node.bias_gradient + node.mutation
+			local bias = node.bias + node.bias_gradient + node.bias_mutation
 			local summ = bias
 			
 			local rodes = node.rodes
@@ -153,7 +154,7 @@ neu.feedForward = function (nn) -- neural network
 					rodes[j] = rode
 				end
 				
-				local weight = (rode.weight + rode.delta + rode.mutation)
+				local weight = (rode.weight + rode.delta + rode.weight_mutation)
 				summ = summ + prev_result*weight
 			end
 			node.summ = summ
@@ -162,13 +163,20 @@ neu.feedForward = function (nn) -- neural network
 		end
 	end
 	local results = {}
-	local result_max
+	local n_max, result_max
+	
 	for n_nod = 1, output_size do
 		local result = nn.output_layer.nodes[n_nod].result
 		if not result_max then result_max = result end
-		if result_max < result then result_max = result end
+		if result_max < result then 
+			n_max = n_nod
+			result_max = result 
+		end
 		table.insert (results, result)
 	end
+	print ('n_max:' .. n_max .. ' result_max:' .. result_max)
 	return results
 end
+
+return neu
 
